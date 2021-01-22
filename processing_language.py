@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
+import nltk
+stopwords = nltk.corpus.stopwords.words('english')
 import numpy as np
 import operator
 import pandas as pd
-import nltk
-stopwords = nltk.corpus.stopwords.words('english')
+import re
 
 from gensim.models.coherencemodel import CoherenceModel
 from gensim.corpora.dictionary import Dictionary
@@ -39,11 +40,12 @@ def abstract_to_BagofWords(text, stopwords=stopwords):
     tokens = nltk.word_tokenize(text)
 
     ### remove punctuation
-    punc = [',', '.', ';', '!', '?', '(', ')', ':', '-', "'", '"']
+    punc = [',', '.', ';', '!', '?', '(', ')', ':', '-', "'", '"', "'s", 'the']
     filtered1 = [i for i in tokens if i not in punc]
 
-    ### remove stopwords
-    filtered2 = [i for i in filtered1 if i not in stopwords]
+    ### remove numbers
+    filtered2 = [re.sub('[0-9]+\.*[0-9]+', '', i) for i in filtered1]
+    filtered2 = [i for i in filtered2 if i != '']
 
     ### part-of-speech tagging
     tagged = nltk.pos_tag(filtered2)
@@ -61,6 +63,9 @@ def abstract_to_BagofWords(text, stopwords=stopwords):
 
     ### remove single letter words
     processed = [word for word in processed if len(word) > 1]
+
+    ### remove stopwords
+    processed = [i for i in processed if i not in stopwords]
 
     return list(processed)
 
@@ -119,6 +124,3 @@ def topic_table(nmf_model, vectorizer, n_top_words=8):
         topics[t] = [feature_names[i] for i in topic.argsort()[:-n_top_words - 1: -1]]
     return pd.DataFrame(topics)
 
-
-
-#def get_topic_residuals(nmf_model, features):
