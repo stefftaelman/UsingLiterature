@@ -10,12 +10,12 @@ from querying import get_abstracts
 from processing_language import abstract_to_BagofWords, identity_tokenizer, best_no_of_topics, topic_table
 from visualize import umap_topic_vis, plot_residuals
 
-SAMPLE_SIZE = 100000
+SAMPLE_SIZE = 1000000
 
 
 ### query pubmed
 keyword = 'peptide'
-#get_abstracts(keyword, 'steff.taelman@lizard.bio', n=SAMPLE_SIZE)
+get_abstracts(keyword, 'steff.taelman@ugent.be', n=SAMPLE_SIZE, chuncksize=25000)
 
 
 
@@ -34,10 +34,11 @@ for i in main_df.index[:SAMPLE_SIZE]:
 print('Vectorizing...')                                     # TF-IDF vectorisation
 tfidf = TfidfVectorizer(tokenizer=identity_tokenizer, lowercase=False, max_df=0.95, min_df=3)    
 features = tfidf.fit_transform(BoW_ordered)
+print(features.shape)
 
-print('Determining a coherent set of topics...')            #use coherence score later to find optimal number of components
-#n = best_no_of_topics(BoW_ordered, range=(5,25), step=1, visualize=True)
-n = 13
+#print('Determining a coherent set of topics...')            #use coherence score later to find optimal number of components
+n = best_no_of_topics(BoW_ordered, range=(5,25), step=1, visualize=True)
+#n = 13
 
 
 
@@ -49,7 +50,6 @@ topic_df = topic_table(nmf, tfidf, n_top_words).T
 print(topic_df.T)
 
 docweights = nmf.transform(tfidf.transform(BoW_ordered))    # Getting a df with each topic by document
-n_top_words = 8
 topic_df = topic_table(nmf, tfidf, n_top_words).T
 topic_df['topics'] = topic_df.apply(lambda x: [' '.join(x)], axis=1)
 topic_df['topics'] = topic_df['topics'].str[0]

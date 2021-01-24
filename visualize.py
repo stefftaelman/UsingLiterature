@@ -46,17 +46,19 @@ def umap_topic_vis(nmf_model, features, topic_list, cutoff=True, validation=True
     else:
         loop_values = [0]
 
-    for i in loop_values:
+    for idx, i in enumerate(loop_values):
         useful_words = [idx for idx, i in enumerate(np.any(nmf_model.components_ > i, axis=0)) if i]
         umap_features = features[:, useful_words]
 
-        plt.figure(figsize=(10,10))
+        fig = plt.figure(figsize=(10,10))
         ### visualisation
         reducer = umap.UMAP(init='spectral', n_neighbors=8, min_dist=0.1, random_state=42)
         embedding = reducer.fit_transform(umap_features)
 
-        plt.scatter(embedding[:, 0], embedding[:, 1], c=[palette[x] for x in topic_list], s=10)
+        plt.scatter(embedding[:, 0], embedding[:, 1], c=[palette[x] for x in topic_list], s=5)
         plt.gca().set_aspect('equal', 'datalim')
         plt.title('UMAP projection of the topics', fontsize=24)
         plt.legend(labels=list(set(topic_list)))
+        filehandle = '../deliverables/UMAP_{}.png'.format(idx)
+        fig.savefig(filehandle, dpi=fig.dpi, bbox_inches='tight')
         plt.show()
