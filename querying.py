@@ -1,7 +1,10 @@
+from bs4 import *
 import numpy as np
 import pandas as pd
 from pymed import PubMed
+import re
 from tqdm import tqdm
+import urllib
 
 def get_abstracts(query, email, n=10000, chuncksize=50000):
     pubmed = PubMed(tool="PubMedSearcher", email=email)
@@ -56,3 +59,35 @@ def get_abstracts(query, email, n=10000, chuncksize=50000):
 
     print('Exported abstracts to {}!'.format(filename))
 
+
+
+
+def query_mapping(pmids, email, conversion_dict):
+    assert len(pmids) <= 200
+    ids = ','.join(map(str, pmids))
+    url = 'https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids=' + ids + '&email=' + email
+    html = urllib.request.urlopen(url).read()
+    soup = BeautifulSoup(html)
+    for i in soup.find_all('record'):
+        tmp = re.search(r'pmcid="PMC\d+', str(i))
+        if tmp:
+            pm = int(re.search(r'requested-id="\d+', str(i)).group()[14:])
+            pmcid = tmp.group()[7:]
+            conversion_dict[pm] = pmcid
+    return conversion_dict
+
+
+
+
+def pmids_to_file(pmids, conversion_dict, emails):
+    unmapped = list(set(pmids).difference(set(conversion_dict.keys())))
+    chuncks = [unmapped[i:i + 200] for i in range(0, len(unmapped), 200)]
+    for chunck, email in zip(chuncks, emails):
+        conversion_dict = query_mapping(chunck, email, conversion_dict)
+    
+    files = []
+    for i in pmids:
+        if i in conversion_dict:
+            handle = conversion_dict[i] + '.txt'
+            files.append(handle)
+    return files

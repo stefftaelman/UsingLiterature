@@ -78,7 +78,7 @@ def best_no_of_topics(tokenized_texts, range=(5,75), step=5, visualize=False):
     dictionary = Dictionary(tokenized_texts)
 
     # filter extremes 
-    #dictionary.filter_extremes(no_below=3, no_above=0.85, keep_n=5000)
+    dictionary.filter_extremes(no_below=3, no_above=0.95)
 
     # bag-of-words format
     corpus = [dictionary.doc2bow(text) for text in tokenized_texts]
@@ -124,3 +124,21 @@ def topic_table(nmf_model, vectorizer, n_top_words=8):
         topics[t] = [feature_names[i] for i in topic.argsort()[:-n_top_words - 1: -1]]
     return pd.DataFrame(topics)
 
+
+
+def predict_topic(nmf_model, vectorizer, abstracts):
+    if type(abstracts) == str:
+        abstracts = [abstracts]
+
+    new_BoWs= [] # NLP preprocessed bag of words
+    for i in abstracts:
+        tmp = abstract_to_BagofWords(i, stopwords=stopwords)
+        new_BoWs.append(tmp)
+
+    ### Make predictions for new papers
+    features_new = tfidf.transform(new_BoWs)
+    X_new = nmf.transform(features_new)
+
+    # Get the top predicted topics
+    return [np.argsort(each)[::-1][0] for each in X_new]
+    
